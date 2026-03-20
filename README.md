@@ -1,4 +1,4 @@
-# @noxy-network/python-sdk
+# 📦 @noxy-network/python-sdk
 
 Backend SDK for Python servers to integrate with the [Noxy](https://noxy.network) push notification network. Send encrypted push notifications to Web3 wallet addresses via the Noxy relay infrastructure.
 
@@ -32,19 +32,19 @@ Communication with the Noxy relay is performed over **gRPC** using Protocol Buff
 - Python **>= 3.10**
 - C compiler (for kybercffi)
 
-## Installation
+## 🚀 Installation
 
 ```bash
 pip install noxy-sdk
 ```
 
-## Quick Start
+## 🛠 Quick Start
 
 ```python
 from noxy import NoxyConfig, init_noxy_client
 
 config = NoxyConfig(
-    endpoint="https://relay.noxy.network:443",
+    endpoint="https://relay.noxy.network",
     auth_token="your-api-token",
     notification_ttl_seconds=3600,
 )
@@ -65,7 +65,7 @@ with init_noxy_client(config) as client:
 
 | Option | Type | Required | Description |
 |--------|------|----------|-------------|
-| `endpoint` | `str` | Yes | Noxy relay gRPC endpoint (e.g. `https://relay.noxy.network:443`). Scheme is stripped; TLS is used by default. |
+| `endpoint` | `str` | Yes | Noxy relay gRPC endpoint (e.g. `https://relay.noxy.network`). Scheme is stripped; TLS is used by default. |
 | `auth_token` | `str` | Yes | Bearer token for relay authentication. Sent in the `Authorization` header on every request. |
 | `notification_ttl_seconds` | `int` | Yes | Time-to-live for notifications in seconds. |
 
@@ -115,6 +115,6 @@ python -m grpc_tools.protoc -I proto --python_out=noxy/grpc --grpc_python_out=no
 # Fix import in noxy/grpc/noxy_pb2_grpc.py: change "import noxy_pb2" to "from . import noxy_pb2"
 ```
 
-## License
+## 📄 License
 
 MIT

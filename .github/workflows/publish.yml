@@ -1,0 +1,39 @@
+# Publish noxy-sdk to PyPI on merge to main.
+# Add PYPI_API_TOKEN (PyPI API token) to repo Secrets.
+name: Publish to PyPI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine grpcio-tools
+
+      - name: Generate gRPC stubs
+        run: |
+          mkdir -p noxy/grpc
+          touch noxy/__init__.py noxy/grpc/__init__.py
+          python -m grpc_tools.protoc -I proto --python_out=noxy/grpc --grpc_python_out=noxy/grpc proto/noxy.proto
+          sed -i 's/^import noxy_pb2/from . import noxy_pb2/' noxy/grpc/noxy_pb2_grpc.py
+
+      - name: Build package
+        run: python -m build
+
+      - name: Publish to PyPI
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: twine upload dist/*
