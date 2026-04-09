@@ -1,22 +1,34 @@
-"""Noxy SDK - Backend SDK for Python servers to integrate with the Noxy push notification network.
+"""Noxy SDK — Decision Layer for AI agent runtimes.
 
-Send encrypted push notifications to Web3 wallet addresses via the Noxy relay.
+Send encrypted, actionable decision payloads (tool proposals, approvals, next-step hints) to
+registered agent devices over gRPC (`agent.proto`, `noxy.agent.AgentService`).
 """
 
 import re
-from noxy.client import NoxyPushClient
+
+from noxy.client import NoxyAgentClient
 from noxy.config import NoxyConfig
+from noxy.decision_outcome import (
+    SendDecisionAndWaitNoDecisionIdError,
+    SendDecisionAndWaitOptions,
+    WaitForDecisionOutcomeOptions,
+    WaitForDecisionOutcomeTimeoutError,
+    is_terminal_human_outcome,
+    poll_decision_outcome_loop,
+)
 from noxy.types import (
+    NoxyDeliveryOutcome,
+    NoxyDeliveryStatus,
+    NoxyGetDecisionOutcomeResponse,
     NoxyGetQuotaResponse,
+    NoxyHumanDecisionOutcome,
     NoxyIdentityDevice,
-    NoxyPushDeliveryStatus,
-    NoxyPushResponse,
     NoxyQuotaStatus,
 )
 
 
-def init_noxy_client(config: NoxyConfig) -> NoxyPushClient:
-    """Initialize the Noxy client.
+def init_noxy_agent_client(config: NoxyConfig) -> NoxyAgentClient:
+    """Initialize the Noxy Decision Layer client.
 
     Normalizes the endpoint (strips https:// or http://) and establishes the gRPC connection.
     """
@@ -25,18 +37,26 @@ def init_noxy_client(config: NoxyConfig) -> NoxyPushClient:
     normalized_config = NoxyConfig(
         endpoint=endpoint,
         auth_token=config.auth_token,
-        notification_ttl_seconds=config.notification_ttl_seconds,
+        decision_ttl_seconds=config.decision_ttl_seconds,
     )
-    return NoxyPushClient(normalized_config)
+    return NoxyAgentClient(normalized_config)
 
 
 __all__ = [
-    "init_noxy_client",
-    "NoxyPushClient",
+    "init_noxy_agent_client",
+    "NoxyAgentClient",
     "NoxyConfig",
-    "NoxyPushResponse",
-    "NoxyPushDeliveryStatus",
+    "NoxyDeliveryOutcome",
+    "NoxyDeliveryStatus",
+    "NoxyGetDecisionOutcomeResponse",
+    "NoxyHumanDecisionOutcome",
     "NoxyGetQuotaResponse",
     "NoxyQuotaStatus",
     "NoxyIdentityDevice",
+    "WaitForDecisionOutcomeOptions",
+    "SendDecisionAndWaitOptions",
+    "WaitForDecisionOutcomeTimeoutError",
+    "SendDecisionAndWaitNoDecisionIdError",
+    "is_terminal_human_outcome",
+    "poll_decision_outcome_loop",
 ]

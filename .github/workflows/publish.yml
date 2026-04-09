@@ -26,8 +26,8 @@ jobs:
         run: |
           mkdir -p noxy/grpc
           touch noxy/__init__.py noxy/grpc/__init__.py
-          python -m grpc_tools.protoc -I proto --python_out=noxy/grpc --grpc_python_out=noxy/grpc proto/noxy.proto
-          sed -i 's/^import noxy_pb2/from . import noxy_pb2/' noxy/grpc/noxy_pb2_grpc.py
+          python -m grpc_tools.protoc -I proto --python_out=noxy/grpc --grpc_python_out=noxy/grpc proto/agent.proto
+          sed -i 's/^import agent_pb2/from . import agent_pb2/' noxy/grpc/agent_pb2_grpc.py
 
       - name: Build package
         run: python -m build

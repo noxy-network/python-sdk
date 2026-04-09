@@ -1,4 +1,4 @@
-"""Configuration for the Noxy SDK client."""
+"""Configuration for the Noxy Decision Layer SDK client."""
 
 from dataclasses import dataclass
 
@@ -12,5 +12,5 @@ class NoxyConfig:
     endpoint: str
     # Bearer token for relay authentication.
     auth_token: str
-    # Time-to-live for notifications in seconds.
-    notification_ttl_seconds: int
+    # Time-to-live for routed decisions in seconds.
+    decision_ttl_seconds: int

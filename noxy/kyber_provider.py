@@ -1,4 +1,4 @@
-"""Kyber768 post-quantum key encapsulation for notification encryption."""
+"""Kyber768 post-quantum key encapsulation for decision payload encryption."""
 
 from typing import Tuple
 

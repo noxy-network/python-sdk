@@ -2,7 +2,7 @@
 
 import uuid
 
-from noxy.grpc import noxy_pb2
+from noxy.grpc import agent_pb2
 from noxy.transport import auth_metadata
 from noxy.types import NoxyIdentityDevice
 
@@ -17,7 +17,7 @@ class IdentityService:
         identity_id: str,
     ) -> list[NoxyIdentityDevice]:
         """Return all devices registered for the given identity address."""
-        req = noxy_pb2.GetIdentityDevicesRequest(
+        req = agent_pb2.GetIdentityDevicesRequest(
             request_id=str(uuid.uuid4()),
             identity_id=identity_id,
         )

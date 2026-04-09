@@ -5,7 +5,7 @@ from typing import Tuple
 
 import grpc
 
-from noxy.grpc import noxy_pb2, noxy_pb2_grpc
+from noxy.grpc import agent_pb2_grpc
 
 
 def _normalize_endpoint(endpoint: str) -> str:
@@ -20,10 +20,10 @@ def create_channel(endpoint: str) -> grpc.Channel:
     return grpc.secure_channel(addr, grpc.ssl_channel_credentials())
 
 
-def create_client(endpoint: str) -> Tuple[noxy_pb2_grpc.PushServiceStub, grpc.Channel]:
-    """Create a PushService stub and channel."""
+def create_client(endpoint: str) -> Tuple[agent_pb2_grpc.AgentServiceStub, grpc.Channel]:
+    """Create an AgentService stub and channel."""
     channel = create_channel(endpoint)
-    stub = noxy_pb2_grpc.PushServiceStub(channel)
+    stub = agent_pb2_grpc.AgentServiceStub(channel)
     return stub, channel
 
 

@@ -1,16 +1,15 @@
-"""Type definitions matching the proto and SDK API."""
+"""Type definitions matching agent.proto and the SDK API."""
 
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import List
 
 
 # EVM wallet address in 0x format
 NoxyIdentityAddress = str
 
 
-class NoxyPushDeliveryStatus(IntEnum):
-    """Delivery status for a push notification."""
+class NoxyDeliveryStatus(IntEnum):
+    """Relay-side delivery status after RouteDecision (matches proto DeliveryStatus)."""
 
     DELIVERED = 0
     QUEUED = 1
@@ -20,11 +19,30 @@ class NoxyPushDeliveryStatus(IntEnum):
 
 
 @dataclass
-class NoxyPushResponse:
-    """Response for a push notification send."""
+class NoxyDeliveryOutcome:
+    """Result of RouteDecision for one device."""
 
-    status: NoxyPushDeliveryStatus
+    status: NoxyDeliveryStatus
     request_id: str
+    decision_id: str
+
+
+class NoxyHumanDecisionOutcome(IntEnum):
+    """Human-in-the-loop resolution (matches proto DecisionOutcome)."""
+
+    PENDING = 0
+    APPROVED = 1
+    REJECTED = 2
+    EXPIRED = 3
+
+
+@dataclass
+class NoxyGetDecisionOutcomeResponse:
+    """Single poll of GetDecisionOutcome."""
+
+    request_id: str
+    pending: bool
+    outcome: NoxyHumanDecisionOutcome
 
 
 class NoxyQuotaStatus(IntEnum):

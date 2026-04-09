@@ -1,29 +1,29 @@
-"""Push service for sending encrypted notifications."""
+"""Encrypt and route actionable decisions via RouteDecision."""
 
 import json
 import uuid
 from typing import Any, List
 
 from noxy.crypto import encrypt
-from noxy.grpc import noxy_pb2
+from noxy.grpc import agent_pb2
 from noxy.kyber_provider import KyberProvider
 from noxy.retries import with_retry_sync
 from noxy.transport import auth_metadata
-from noxy.types import NoxyIdentityDevice, NoxyPushDeliveryStatus, NoxyPushResponse
+from noxy.types import NoxyDeliveryOutcome, NoxyDeliveryStatus, NoxyIdentityDevice
 
 
-class PushService:
-    """Sends encrypted push notifications."""
+class DecisionService:
+    """Encrypts and routes actionable decisions per device."""
 
     def __init__(self, kyber_provider: KyberProvider) -> None:
         self._kyber = kyber_provider
 
-    def _encrypt_notification(
+    def _encrypt_decision(
         self,
         device_pq_public_key: bytes,
         plaintext: bytes,
     ) -> tuple[bytes, bytes, bytes]:
-        """Encrypt notification for a device. Returns (kyber_ct, nonce, ciphertext)."""
+        """Encrypt decision for a device. Returns (kyber_ct, nonce, ciphertext)."""
         kyber_ct, shared_secret = self._kyber.encapsulate(device_pq_public_key)
         ciphertext, nonce = encrypt(shared_secret, plaintext)
         return kyber_ct, nonce, ciphertext
@@ -37,22 +37,27 @@ class PushService:
         target_device_id: str,
         kyber_ct: bytes,
         nonce: bytes,
-    ) -> NoxyPushResponse:
+        decision_id: str,
+    ) -> NoxyDeliveryOutcome:
         """Send encrypted payload to the relay with retries."""
-        def _do_send() -> NoxyPushResponse:
-            req = noxy_pb2.PushNotificationRequest(
+
+        def _do_send() -> NoxyDeliveryOutcome:
+            req = agent_pb2.RouteDecisionRequest(
                 request_id=str(uuid.uuid4()),
                 ciphertext=ciphertext,
                 ttl_seconds=ttl_seconds,
                 target_device_id=target_device_id,
                 kyber_ct=kyber_ct,
                 nonce=nonce,
+                decision_id=decision_id,
             )
             metadata = auth_metadata(auth_token)
-            resp = stub.PushNotification(req, metadata=metadata)
-            return NoxyPushResponse(
-                status=NoxyPushDeliveryStatus(resp.status),
+            resp = stub.RouteDecision(req, metadata=metadata)
+            out_id = resp.decision_id or decision_id
+            return NoxyDeliveryOutcome(
+                status=NoxyDeliveryStatus(resp.status),
                 request_id=resp.request_id,
+                decision_id=out_id,
             )
 
         return with_retry_sync(_do_send, retries=3)
@@ -62,15 +67,19 @@ class PushService:
         stub,
         auth_token: str,
         devices: List[NoxyIdentityDevice],
-        push_notification: Any,
+        actionable: Any,
         ttl_seconds: int,
-    ) -> List[NoxyPushResponse]:
-        """Send a push notification to all devices, encrypting per device."""
-        plaintext = json.dumps(push_notification, default=str).encode("utf-8")
-        results: List[NoxyPushResponse] = []
+    ) -> List[NoxyDeliveryOutcome]:
+        """Route an actionable decision to all devices, encrypting per device.
+
+        Generates one UUID per call and sends it as ``decision_id`` on every ``RouteDecision``.
+        """
+        plaintext = json.dumps(actionable, default=str).encode("utf-8")
+        decision_id = str(uuid.uuid4())
+        results: List[NoxyDeliveryOutcome] = []
 
         for device in devices:
-            kyber_ct, nonce, ciphertext = self._encrypt_notification(
+            kyber_ct, nonce, ciphertext = self._encrypt_decision(
                 device.pq_public_key, plaintext
             )
             resp = self._send_to_network(
@@ -81,6 +90,7 @@ class PushService:
                 device.device_id,
                 kyber_ct,
                 nonce,
+                decision_id,
             )
             results.append(resp)
 

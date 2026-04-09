@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "noxy-sdk"
-version = "1.0.0"
-description = "Backend SDK for Python servers to integrate with the Noxy push notification network"
+version = "2.0.0"
+description = "Decision Layer SDK for AI agents. Encrypted actionable decisions over gRPC."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
 authors = [{ name = "Noxy Network" }]
-keywords = ["noxy", "push-notifications", "web3", "post-quantum", "grpc"]
+keywords = ["noxy", "ai-agents", "web3", "post-quantum", "grpc"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

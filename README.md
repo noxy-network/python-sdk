@@ -1,120 +1,102 @@
 # 📦 @noxy-network/python-sdk
 
-Backend SDK for Python servers to integrate with the [Noxy](https://noxy.network) push notification network. Send encrypted push notifications to Web3 wallet addresses via the Noxy relay infrastructure.
+SDK for **AI agent runtimes** integrating with the [Noxy](https://noxy.network) **Decision Layer**: send encrypted, **actionable** decision payloads (tool proposals, approvals, next-step hints) to registered agent devices over gRPC.
+
+**Before you integrate:** Create your app at [noxy.network](https://noxy.network). When the app is created, you receive an **app id** and an **app token** (auth token). This Python SDK authenticates with the relay using the **app token** (`auth_token` in `NoxyConfig`). The **app id** is used by client SDKs (browser, iOS, Android, Telegram bot), not as the bearer token here.
 
 ## Overview
 
-This SDK enables server-side applications to:
+- **Route decisions** to devices bound to a Web3 identity (`0x…` address).
+- **Receive delivery outcomes** from the relay plus a **`decision_id`** when the relay accepts the route.
+- **Wait for human-in-the-loop resolution** — approve / reject / expire. The usual path is **`send_decision_and_wait_for_outcome`**.
+- **Query quota** and **resolve identity devices**.
 
-- **Send push notifications** to users by their Web3 wallet address (EVM `0x` format)
-- **Query quota usage** for your application's relay allocation
-- **Resolve identity devices** to deliver notifications to all registered devices
+The wire API uses **`agent.proto`** (`noxy.agent.AgentService`): `RouteDecision`, `GetDecisionOutcome`, `GetQuota`, `GetIdentityDevices`.
 
-Communication with the Noxy relay is performed over **gRPC** using Protocol Buffers. All notifications are **encrypted end-to-end** on the backend before transmission; decryption occurs only on the recipient's Noxy device. The SDK uses **post-quantum encryption** (Kyber768) to protect payloads against future quantum attacks.
-
-## Architecture
-
-```
-┌─────────────────┐     gRPC (TLS)      ┌─────────────────┐     E2E Encrypted     ┌─────────────────┐
-│  Your Backend   │ ◄─────────────────► │  Noxy Relay     │ ◄──────────────────► │  Noxy Device    │
-│  (this SDK)     │   PushNotification  │                 │   Ciphertext only    │  (decrypts)      │
-│                 │   GetQuota          │                 │                      │                 │
-│                 │   GetIdentityDevices│                 │                      │                 │
-└─────────────────┘                     └─────────────────┘                      └─────────────────┘
-```
-
-- **Encryption**: Kyber768 (post-quantum KEM) + AES-256-GCM. Each notification is encrypted per-device using the device's post-quantum public key.
-- **Transport**: gRPC over TLS with Bearer token authentication.
-- **Relay**: The Noxy relay forwards ciphertext only; it cannot decrypt notification payloads.
+Communication is **gRPC over TLS** with Bearer authentication. Payloads are **encrypted end-to-end** (Kyber + AES-256-GCM) per device before leaving your process.
 
 ## Requirements
 
 - Python **>= 3.10**
-- C compiler (for kybercffi)
 
-## 🚀 Installation
+## Installation
 
 ```bash
 pip install noxy-sdk
 ```
 
-## 🛠 Quick Start
+## Quick start
 
 ```python
-from noxy import NoxyConfig, init_noxy_client
-
-config = NoxyConfig(
-    endpoint="https://relay.noxy.network",
-    auth_token="your-api-token",
-    notification_ttl_seconds=3600,
+from noxy import (
+    NoxyHumanDecisionOutcome,
+    init_noxy_agent_client,
+    NoxyConfig,
 )
 
-with init_noxy_client(config) as client:
-    # Send a push notification to a wallet address
-    results = client.send_push(
-        "0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1",
-        {"title": "New message", "body": "You have a new notification", "data": {"action": "open_chat", "id": "123"}},
+client = init_noxy_agent_client(
+    NoxyConfig(
+        endpoint="https://relay.noxy.network",
+        auth_token="your-api-token",
+        decision_ttl_seconds=3600,
     )
+)
 
-    # Check quota usage
-    quota = client.get_quota()
-    print(f"{quota.quota_remaining} remaining")
+resolution = client.send_decision_and_wait_for_outcome(
+    "0x...",
+    {
+        "kind": "propose_tool_call",
+        "tool": "transfer_funds",
+        "args": { "to": "0x000000000000000000000000000000000000dEaD", "amountWei": "1" },
+        "title": "Transfer 1 wei to the burn address",
+        "summary": "The agent is requesting approval to send 1 wei to the burn address.",
+    },
+)
+
+if resolution.outcome == NoxyHumanDecisionOutcome.APPROVED:
+    ...
 ```
 
 ## Configuration
 
 | Option | Type | Required | Description |
 |--------|------|----------|-------------|
-| `endpoint` | `str` | Yes | Noxy relay gRPC endpoint (e.g. `https://relay.noxy.network`). Scheme is stripped; TLS is used by default. |
-| `auth_token` | `str` | Yes | Bearer token for relay authentication. Sent in the `Authorization` header on every request. |
-| `notification_ttl_seconds` | `int` | Yes | Time-to-live for notifications in seconds. |
+| `endpoint` | `str` | Yes | Relay gRPC endpoint. `https://` is stripped; TLS is used. |
+| `auth_token` | `str` | Yes | Bearer token for relay auth. |
+| `decision_ttl_seconds` | `int` | Yes | TTL for routed decisions (seconds). |
 
-## API Reference
+## SendDecisionAndWaitOptions
 
-### `init_noxy_client(config: NoxyConfig) -> NoxyPushClient`
+Optional argument to **`send_decision_and_wait_for_outcome`**.
 
-Initializes the SDK client. Normalizes the endpoint and establishes the gRPC connection.
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `initial_poll_interval_ms` | `float \| None` | `400` | First delay between polls (ms). |
+| `max_poll_interval_ms` | `float \| None` | `30000` | Cap between polls (ms). |
+| `max_wait_ms` | `float \| None` | `900000` | Total budget (ms). Raises `WaitForDecisionOutcomeTimeoutError`. |
+| `backoff_multiplier` | `float \| None` | `1.6` | Backoff multiplier per iteration. |
 
-### `NoxyPushClient`
+## API
 
-#### `send_push(identity_address, push_notification) -> List[NoxyPushResponse]`
+- **`init_noxy_agent_client(config) -> NoxyAgentClient`**
+- **`NoxyAgentClient`**: `send_decision`, `get_decision_outcome`, `wait_for_decision_outcome`, `send_decision_and_wait_for_outcome`, `get_quota`, `close`
+- **`is_terminal_human_outcome`**, **`poll_decision_outcome_loop`** (advanced)
+- Exceptions: **`WaitForDecisionOutcomeTimeoutError`**, **`SendDecisionAndWaitNoDecisionIdError`**
 
-Sends a push notification to all devices registered for the given Web3 identity address.
+## Regenerating gRPC code
 
-- **`identity_address`**: EVM address in `0x` format (e.g. `0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb1`)
-- **`push_notification`**: Any JSON-serializable object (e.g. `dict`). Encrypted before transmission.
-- **Returns**: List of `NoxyPushResponse` per device, with `status` and `request_id`.
-
-#### `get_quota() -> NoxyGetQuotaResponse`
-
-Returns quota usage for your application.
-
-- **Returns**: `NoxyGetQuotaResponse` with `request_id`, `app_name`, `quota_total`, `quota_remaining`, `status`.
-
-### Types
-
-- **`NoxyPushDeliveryStatus`**: `DELIVERED` (0) | `QUEUED` (1) | `NO_DEVICES` (2) | `REJECTED` (3) | `ERROR` (4)
-- **`NoxyQuotaStatus`**: `QUOTA_ACTIVE` (0) | `QUOTA_SUSPENDED` (1) | `QUOTA_DELETED` (2)
-
-## Encryption Details
-
-1. **Key encapsulation**: For each device, the SDK encapsulates a shared secret using the device's Kyber768 post-quantum public key (`pq_public_key`).
-2. **Key derivation**: The shared secret is expanded via HKDF-SHA256 to a 256-bit AES key.
-3. **Payload encryption**: The notification payload (JSON) is encrypted with AES-256-GCM. The ciphertext includes the GCM auth tag appended for integrity verification.
-4. **Transmission**: Only `kyber_ct`, `nonce`, and `ciphertext` are sent to the relay. The relay cannot decrypt; only the target device (with its secret key) can decrypt.
-
-## Building from source
+From the package root (requires `grpcio-tools`):
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate  # or .venv\Scripts\activate on Windows
-pip install -e .
-
-# Regenerate proto (if proto file changes)
-python -m grpc_tools.protoc -I proto --python_out=noxy/grpc --grpc_python_out=noxy/grpc proto/noxy.proto
-# Fix import in noxy/grpc/noxy_pb2_grpc.py: change "import noxy_pb2" to "from . import noxy_pb2"
+python -m grpc_tools.protoc -I proto --python_out=noxy/grpc --grpc_python_out=noxy/grpc proto/agent.proto
 ```
 
-## 📄 License
+Then fix the import in `noxy/grpc/agent_pb2_grpc.py` to use a relative import:
+
+```python
+from . import agent_pb2 as agent__pb2
+```
+
+## License
 
 MIT
