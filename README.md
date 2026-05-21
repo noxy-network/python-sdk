@@ -1,6 +1,6 @@
 # 📦 @noxy-network/python-sdk
 
-SDK for **AI agent runtimes** integrating with the [Noxy](https://noxy.network) **Decision Layer**: send encrypted, **actionable** decision payloads (tool proposals, approvals, next-step hints) to registered agent devices over gRPC.
+SDK for **AI agent backends** integrating with [Noxy](https://noxy.network) **human-in-the-loop** guardrails: send encrypted, **actionable** prompts (tool proposals, approvals, next-step hints) to registered user devices over gRPC so **users can take decisions** before work proceeds.
 
 **Before you integrate:** Create your app at [noxy.network](https://noxy.network). When the app is created, you receive an **app id** and an **app token** (auth token). This Python SDK authenticates with the relay using the **app token** (`auth_token` in `NoxyConfig`). The **app id** is used by client SDKs (browser, iOS, Android, Telegram bot), not as the bearer token here.
 
@@ -8,7 +8,7 @@ SDK for **AI agent runtimes** integrating with the [Noxy](https://noxy.network) 
 
 - **Route decisions** to devices bound to a Web3 identity (`0x…` address).
 - **Receive delivery outcomes** from the relay plus a **`decision_id`** when the relay accepts the route.
-- **Wait for human-in-the-loop resolution** — approve / reject / expire. The usual path is **`send_decision_and_wait_for_outcome`**.
+- **Wait for human-in-the-loop resolution** — **users take decisions** on-device and outcomes return via polling; prompts can **expire**. The usual path is **`send_decision_and_wait_for_outcome`**.
 - **Query quota** and **resolve identity devices**.
 
 The wire API uses **`agent.proto`** (`noxy.agent.AgentService`): `RouteDecision`, `GetDecisionOutcome`, `GetQuota`, `GetIdentityDevices`.
