@@ -5,7 +5,7 @@ Run with: python examples/basic.py
 
 Set environment variables:
   NOXY_APP_TOKEN=your-app-token
-  NOXY_TARGET_ADDRESS=0x...   # Web3 identity to route the decision to
+  NOXY_IDENTITY_ID=logical user id (wallet 0x…, email, phone, user_id, …)
 """
 
 import os
@@ -32,9 +32,9 @@ def main() -> None:
         print("NOXY_APP_TOKEN is required.", file=sys.stderr)
         sys.exit(1)
 
-    identity_address = os.environ.get("NOXY_TARGET_ADDRESS")
-    if not identity_address:
-        print("NOXY_TARGET_ADDRESS is required (Web3 identity 0x…).", file=sys.stderr)
+    identity_id = os.environ.get("NOXY_IDENTITY_ID")
+    if not identity_id:
+        print("NOXY_IDENTITY_ID is required (same identity your app uses when linking devices).", file=sys.stderr)
         sys.exit(1)
 
     config = NoxyConfig(
@@ -52,8 +52,8 @@ def main() -> None:
             "summary": "[Py] The agent is requesting approval to send 1 wei to the burn address.",
         }
 
-        print(f"Routing decision to {identity_address}...")
-        resolution = client.send_decision_and_wait_for_outcome(identity_address, actionable)
+        print(f"Routing decision to {identity_id}...")
+        resolution = client.send_decision_and_wait_for_outcome(identity_id, actionable)
         print(
             f"Outcome: {resolution.outcome.name}, pending={resolution.pending}, "
             f"request_id={resolution.request_id}"

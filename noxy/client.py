@@ -23,6 +23,7 @@ from noxy.types import (
     NoxyGetDecisionOutcomeResponse,
     NoxyGetQuotaResponse,
     NoxyHumanDecisionOutcome,
+    NoxyIdentityId,
 )
 
 
@@ -38,7 +39,7 @@ class NoxyAgentClient:
 
     def send_decision(
         self,
-        identity_address: str,
+        identity_id: NoxyIdentityId,
         actionable: Any,
     ) -> List[NoxyDeliveryOutcome]:
         """Route an encrypted actionable decision to all devices for the identity.
@@ -49,7 +50,7 @@ class NoxyAgentClient:
         devices = self._identity.get_devices(
             self._stub,
             self._config.auth_token,
-            identity_address,
+            identity_id,
         )
         return self._decision.send(
             self._stub,
@@ -90,12 +91,12 @@ class NoxyAgentClient:
 
     def send_decision_and_wait_for_outcome(
         self,
-        identity_address: str,
+        identity_id: NoxyIdentityId,
         actionable: Any,
         options: Optional[SendDecisionAndWaitOptions] = None,
     ) -> NoxyGetDecisionOutcomeResponse:
         """send_decision then wait on the first delivery with a non-empty decision_id."""
-        deliveries = self.send_decision(identity_address, actionable)
+        deliveries = self.send_decision(identity_id, actionable)
         decision_id = None
         for d in deliveries:
             if d.decision_id:
@@ -107,7 +108,7 @@ class NoxyAgentClient:
         o = options or SendDecisionAndWaitOptions()
         wait_opts = WaitForDecisionOutcomeOptions(
             decision_id=decision_id,
-            identity_id=identity_address,
+            identity_id=identity_id,
             initial_poll_interval_ms=o.initial_poll_interval_ms,
             max_poll_interval_ms=o.max_poll_interval_ms,
             max_wait_ms=o.max_wait_ms,

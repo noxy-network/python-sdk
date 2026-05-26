@@ -6,7 +6,7 @@ SDK for **AI agent backends** integrating with [Noxy](https://noxy.network) **hu
 
 ## Overview
 
-- **Route decisions** to devices bound to a Web3 identity (`0x…` address).
+- **Route decisions** to devices bound to a **logical identity**: wallet (`0x…`), email, phone, app `user_id`, …—whatever matches `identity_id` / device linking in your Noxy app.
 - **Receive delivery outcomes** from the relay plus a **`decision_id`** when the relay accepts the route.
 - **Wait for human-in-the-loop resolution** — **users take decisions** on-device and outcomes return via polling; prompts can **expire**. The usual path is **`send_decision_and_wait_for_outcome`**.
 - **Query quota** and **resolve identity devices**.
@@ -43,7 +43,7 @@ client = init_noxy_agent_client(
 )
 
 resolution = client.send_decision_and_wait_for_outcome(
-    "0x...",
+    "user@example.com",  # or 0x…, phone, user_id — match device registration
     {
         "kind": "propose_tool_call",
         "tool": "transfer_funds",
@@ -79,7 +79,8 @@ Optional argument to **`send_decision_and_wait_for_outcome`**.
 ## API
 
 - **`init_noxy_agent_client(config) -> NoxyAgentClient`**
-- **`NoxyAgentClient`**: `send_decision`, `get_decision_outcome`, `wait_for_decision_outcome`, `send_decision_and_wait_for_outcome`, `get_quota`, `close`
+- **`NoxyIdentityId`** — type alias for relay `identity_id` (`str`).
+- **`NoxyAgentClient`**: `send_decision(identity_id, ...)`, `get_decision_outcome`, `wait_for_decision_outcome`, `send_decision_and_wait_for_outcome`, `get_quota`, `close`
 - **`is_terminal_human_outcome`**, **`poll_decision_outcome_loop`** (advanced)
 - Exceptions: **`WaitForDecisionOutcomeTimeoutError`**, **`SendDecisionAndWaitNoDecisionIdError`**
 

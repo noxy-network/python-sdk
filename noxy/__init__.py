@@ -23,6 +23,7 @@ from noxy.types import (
     NoxyGetQuotaResponse,
     NoxyHumanDecisionOutcome,
     NoxyIdentityDevice,
+    NoxyIdentityId,
     NoxyQuotaStatus,
 )
 
@@ -53,6 +54,7 @@ __all__ = [
     "NoxyGetQuotaResponse",
     "NoxyQuotaStatus",
     "NoxyIdentityDevice",
+    "NoxyIdentityId",
     "WaitForDecisionOutcomeOptions",
     "SendDecisionAndWaitOptions",
     "WaitForDecisionOutcomeTimeoutError",

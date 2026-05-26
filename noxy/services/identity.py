@@ -16,7 +16,7 @@ class IdentityService:
         auth_token: str,
         identity_id: str,
     ) -> list[NoxyIdentityDevice]:
-        """Return all devices registered for the given identity address."""
+        """Return all devices registered for the given identity id."""
         req = agent_pb2.GetIdentityDevicesRequest(
             request_id=str(uuid.uuid4()),
             identity_id=identity_id,

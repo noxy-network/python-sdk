@@ -26,7 +26,7 @@ if _version_not_supported:
 
 
 class AgentServiceStub(object):
-    """AI agent → relay: route encrypted human-in-the-loop decisions to wallet devices.
+    """AI agent → relay: route encrypted decisions to registered user devices.
     """
 
     def __init__(self, channel):
@@ -58,7 +58,7 @@ class AgentServiceStub(object):
 
 
 class AgentServiceServicer(object):
-    """AI agent → relay: route encrypted human-in-the-loop decisions to wallet devices.
+    """AI agent → relay: route encrypted decisions to registered user devices.
     """
 
     def RouteDecision(self, request, context):
@@ -117,7 +117,7 @@ def add_AgentServiceServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class AgentService(object):
-    """AI agent → relay: route encrypted human-in-the-loop decisions to wallet devices.
+    """AI agent → relay: route encrypted decisions to registered user devices.
     """
 
     @staticmethod

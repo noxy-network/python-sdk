@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 
-# EVM wallet address in 0x format
-NoxyIdentityAddress = str
+# Relay identity_id: wallet 0x…, email, phone, app user_id, …—match device registration.
+NoxyIdentityId = str
 
 
 class NoxyDeliveryStatus(IntEnum):
